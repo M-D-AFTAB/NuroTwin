@@ -11,8 +11,6 @@
 NuroTwin turns raw biometric signals into something humans actually understand.  
 By streaming live physiological data from an ESP32, it creates a responsive 3D companion that mirrors your internal state in real time.
 
-No charts-first thinking. No cold dashboards.  
-Just a digital twin that reacts when your body does.
 
 ---
 
