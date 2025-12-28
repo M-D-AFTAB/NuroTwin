@@ -13,6 +13,15 @@ By streaming live physiological data from an ESP32, it creates a responsive 3D c
 
 
 ---
+## 🔐 Authentication & User Management
+
+NuroTwin uses **Google Firebase Authentication** to handle secure user access.
+
+- Email & password–based authentication  
+- Secure session handling  
+
+Firebase allows users to sign in, maintain persistent sessions, and lays the foundation for personalized health history and profiles as the platform evolves.
+
 
 ## 🚀 Key Features
 
