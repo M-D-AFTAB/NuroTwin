@@ -174,7 +174,7 @@
             margin-bottom: 20px;
             background: linear-gradient(90deg, #fff, #888);
             -webkit-background-clip: text;
-            background-clip: text; 
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -474,6 +474,19 @@
             }
         }
 
+        @media (max-width: 600px) {
+            .section-title span {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+        }
+
+        @media (max-width: 370px) {
+            .hero span {
+            font-size: 30px;
+        }
+        }
+
         @media (max-width: 900px) {
             .nav-container {
                 padding: 15px 20px;
@@ -600,14 +613,15 @@
         <div class="hero-content">
             <h1>Your Health, <br> <span>Re-Imagined</span></h1>
             <p style="margin-bottom: 30px; max-width: 500px; font-size: 1.1rem;">
-                NuroTwin creates a living 3D mirror of your mind and body.
+                NuroTwin creates a living 3D mirror of your mind and body
                 Using IoT sensors, we visualize stress, fatigue, and vitals in real-time
             </p>
             <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: flex-start;">
                 <a href="signup.html" class="btn btn-primary" style="padding: 15px 40px; font-size: 1rem;">Get
                     Started</a>
-                <a href="https://youtu.be/lWWpyDRU9-8" class="btn btn-ghost" style="padding: 15px 30px; font-size: 1rem;">Watch Demo <i
-                        class="fas fa-play" style="font-size: 0.8em; margin-left: 5px;"></i></a>
+                <a href="https://youtu.be/lWWpyDRU9-8" class="btn btn-ghost"
+                    style="padding: 15px 30px; font-size: 1rem;">Watch Demo <i class="fas fa-play"
+                        style="font-size: 0.8em; margin-left: 5px;"></i></a>
             </div>
         </div>
         <div id="canvas-container"></div>
@@ -615,12 +629,11 @@
 
     <section id="problem">
         <div class="split-section">
-            <img src="prob1.png"
-                class="split-img" alt="Data Overload">
+            <img src="prob1.png" class="split-img" alt="Data Overload">
             <div class="split-text">
                 <h2 class="problem">The Silent Epidemic</h2>
                 <p>
-                    Modern healthcare is reactive. We wait until we break to fix ourselves.
+                    Modern healthcare is reactive. We wait until we break to fix ourselves
                     Cognitive burnout is invisible, and traditional numerical data is boring and hard to interpret
                     emotionally
                 </p>
@@ -653,8 +666,7 @@
                     This creates an immediate, intuitive feedback loop that encourages healthier habits
                 </p>
             </div>
-            <img src="NuroTwin Diagram2.drawio.svg"
-                class="split-img" alt="Future Tech">
+            <img src="NuroTwin Diagram2.drawio.svg" class="split-img" alt="Future Tech">
         </div>
     </section>
 
@@ -731,8 +743,7 @@
 
         <div class="carousel-wrapper" id="carousel">
             <div class="robot-card active">
-                <video src="State1.mp4" autoplay loop muted
-                    playsinline></video>
+                <video src="State1.mp4" autoplay loop muted playsinline></video>
                 <div class="overlay">
                     <div>
                         <div class="label" style="color: #10b981;">HEALTHY</div>
@@ -742,8 +753,7 @@
             </div>
 
             <div class="robot-card">
-                <video src="State2.mp4" autoplay loop muted
-                    playsinline></video>
+                <video src="State2.mp4" autoplay loop muted playsinline></video>
                 <div class="overlay">
                     <div>
                         <div class="label" style="color: #f59e0b;">STRESSED</div>
@@ -753,8 +763,7 @@
             </div>
 
             <div class="robot-card">
-                <video src="State3.mp4" autoplay loop muted
-                    playsinline></video>
+                <video src="State3.mp4" autoplay loop muted playsinline></video>
                 <div class="overlay">
                     <div>
                         <div class="label" style="color: #ef4444;">CRITICAL</div>
@@ -764,8 +773,7 @@
             </div>
 
             <div class="robot-card">
-                <video src="State4.mp4" autoplay loop muted
-                    playsinline></video>
+                <video src="State4.mp4" autoplay loop muted playsinline></video>
                 <div class="overlay">
                     <div>
                         <div class="label" style="color: #7c3aed;">ALERT</div>
