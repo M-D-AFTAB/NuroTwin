@@ -30,6 +30,135 @@
         body { 
             background: var(--bg); color: var(--text); 
             font-family: 'Segoe UI', sans-serif; overflow: hidden; 
+            cursor: none;
+        }
+
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: difference;
+            transition: transform 0.1s ease;
+            display: none;
+        }
+
+        /* Animation Control Panel */
+        .animation-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            width: 280px;
+        }
+
+        .animation-controls h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            display: block;
+            color: #a1a1aa;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .select-control {
+            width: 100%;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .animation-status {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .force-controls {
+            background: rgba(16, 185, 129, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border: 1px solid var(--success);
+        }
+
+        .force-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .force-btn {
+            padding: 6px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05);
+            color: #a1a1aa;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .force-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .force-btn.active {
+            background: var(--primary);
+            color: #000;
+            border-color : var(--primary);
+        }
+
+        /* Material State Display */
+        .material-state {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .state-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .state-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .state-text {
+            font-size: 11px;
+            color: #a1a1aa;
         }
 
         /* Navbar */
@@ -62,7 +191,7 @@
             position: relative;
             background: radial-gradient(circle at center, #27272a 0%, #09090b 100%);
             border-right: 1px solid var(--border);
-            overflow: hidden; /* Ensures no scrollbars on the stage */
+            overflow: hidden;
         }
         #three-canvas-container { width: 100%; height: 100%; display: block; }
         
@@ -138,7 +267,6 @@
         @media (max-width: 900px) {
             .layout-grid {
                 grid-template-columns: 1fr;
-                /* Robot gets 45% height, Dashboard gets rest. Fixed scrolling. */
                 grid-template-rows: 45vh 1fr; 
                 height: 100vh;
                 overflow: hidden; 
@@ -152,23 +280,25 @@
 
             .dashboard-content {
                 padding: 20px;
-                overflow-y: scroll; /* Allow scrolling inside this panel */
+                overflow-y: scroll;
                 height: 100%;
-                padding-bottom: 100px; /* Extra padding for bottom scroll */
+                padding-bottom: 100px;
             }
 
-            /* Navbar scrollable on mobile */
+            body { cursor: auto; }
+            .custom-cursor { display: none !important; }
+            .animation-controls { display: none !important; }
+
             .nav-content {
                 padding: 0 15px;
                 justify-content: flex-start;
                 gap: 20px;
-                overflow-x: auto;
+                overflow-x : auto;
                 -webkit-overflow-scrolling: touch;
             }
             .nav-content::-webkit-scrollbar { display: none; }
             .list-item { white-space: nowrap; }
 
-            /* Grid Adjustments */
             .card-row { grid-template-columns: 1fr; gap: 15px; }
             .charts-grid { grid-template-columns: 1fr; }
             .form-grid { grid-template-columns: 1fr; }
@@ -180,6 +310,44 @@
 </head>
 
 <body>
+    <div class="custom-cursor" id="customCursor"></div>
+
+    <!-- Animation Control Panel -->
+    <div class="animation-controls">
+        <h4><i class="fas fa-cog"></i> Robot Controls</h4>
+        
+        <div class="control-group">
+            <label class="control-label">Animation Mode</label>
+            <select class="select-control" id="animationMode">
+                <option value="sensor">Sensor-Based (Health)</option>
+                <option value="forced">Forced Animation</option>
+            </select>
+        </div>
+        
+        <div id="forcedControls" class="force-controls" style="display: none;">
+            <label class="control-label">Force Animation</label>
+            <div class="force-buttons">
+                <button class="force-btn" data-anim="idle_healthy">Healthy</button>
+                <button class="force-btn" data-anim="idle_stressed">Stressed</button>
+                <button class="force-btn" data-anim="idle_critical">Critical</button>
+                <button class="force-btn" data-anim="idle_alert">Alert</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label class="control-label">Current Animation</label>
+            <div class="animation-status" id="currentAnimationStatus">idle_healthy</div>
+        </div>
+
+        <div class="material-state">
+            <label class="control-label">Material State</label>
+            <div class="state-indicator">
+                <div class="state-color" id="materialStateColor" style="background: #D4D4D4;"></div>
+                <div class="state-text" id="materialStateText">Healthy (Silver)</div>
+            </div>
+        </div>
+    </div>
+
     <nav class="global-nav">
         <ul class="nav-content">
             <li class="list-item" style="font-size: 21px;"><a href="#" class="brand">NuroTwin</a></li>
@@ -279,28 +447,427 @@
     </div>
 
     <script>
+        // --- GLOBAL VARIABLES ---
+        let state = { bpm: 0, spo2: 0, temp: 0, healthScore: 100 };
+        let mouse = { x: 0, y: 0, targetX: 0, targetY: 0, normalizedX: 0, normalizedY: 0 };
+        
+        let robot, eyeL, eyeR, head, neck, pupilL, pupilR;
+        let isDemoActive = false;
+        let simInterval;
+        
+        // Animation system variables
+        let mixer = null;
+        let animationActions = {};
+        let currentAnimation = null;
+        let currentAnimationName = null;
+        let headFollowingEnabled = true;
+        let forcedAnimationMode = false;
+        let currentForcedAnimation = null;
+        
+        // Bone references for eye control
+        let eyeLBone = null;
+        let eyeRBone = null;
+        let headBone = null;
+        let neckBone = null;
+        
+        // Mouth morph targets
+        let mouthMesh = null;
+        let happyMouthIndex = -1;
+        let sadMouthIndex = -1;
+        
+        // Material references - using arrays to handle multiple materials
+        let bodyMaterials = [];
+        let eyeMaterials = [];
+        let jointMaterials = [];
+        let tealMaterials = [];
+        let redMaterials = [];
+        
+        // Material state variables
+        let currentMaterialState = 'healthy';
+        let materialTransitionSpeed = 0.1;
+        
+        // Define material color states for different animations
+        const materialStates = {
+            idle_healthy: {
+                bodyColor: new THREE.Color(0xD4D4D4),    // Silver
+                eyeColor: new THREE.Color(0x00F0FF),     // Blue
+                redColor: new THREE.Color(0x00F0FF),     // Blue
+                jointColor: new THREE.Color(0x333333),   // Dark Grey
+                tealColor: new THREE.Color(0x00F0FF),    // Teal
+                stateName: 'Healthy (Silver)',
+                stateColor: '#D4D4D4'
+            },
+            idle_stressed: {
+                bodyColor: new THREE.Color(0xA0522D),    // Light Rust (30% rust mix)
+                eyeColor: new THREE.Color(0xFFAA00),     // Orange
+                redColor: new THREE.Color(0xFFAA00),     // Orange
+                jointColor: new THREE.Color(0x2A2A2A),   // Slightly darker
+                tealColor: new THREE.Color(0xFFAA00),    // Orange
+                stateName: 'Stressed (Light Rust)',
+                stateColor: '#A0522D'
+            },
+            idle_critical: {
+                bodyColor: new THREE.Color(0x8B4513),    // Rust Brown (60% rust mix)
+                eyeColor: new THREE.Color(0xFF0000),     // Red
+                redColor: new THREE.Color(0xFF0000),     // Red
+                jointColor: new THREE.Color(0x1A1A1A),   // Very dark
+                tealColor: new THREE.Color(0xFF0000),    // Red
+                stateName: 'Critical (Rust Brown)',
+                stateColor: '#8B4513'
+            },
+            idle_alert: {
+                bodyColor: new THREE.Color(0x5C2C06),    // Dark Rust (Black/Rust mix)
+                eyeColor: new THREE.Color(0x000000),     // Black/Off
+                redColor: new THREE.Color(0x000000),     // Black/Off
+                jointColor: new THREE.Color(0x000000),   // Black
+                tealColor: new THREE.Color(0x8B0000),    // Dark Red
+                stateName: 'Alert (Dark Rust)',
+                stateColor: '#5C2C06'
+            }
+        };
+        
+        let clock = new THREE.Clock();
+        let container, customCursor, charts = {};
+        let camera, renderer, scene;
+
+        // Global functions
+        function updateAnimationBasedOnHealth(healthScore, force = false) {
+            if (!mixer || Object.keys(animationActions).length === 0) {
+                return;
+            }
+            
+            // If forced mode is active, don't change based on health
+            if (forcedAnimationMode && currentForcedAnimation) {
+                return;
+            }
+            
+            let targetAnimationName = "";
+            
+            if (healthScore > 80) {
+                targetAnimationName = "idle_healthy";
+            } else if (healthScore > 50) {
+                targetAnimationName = "idle_stressed";
+            } else if (healthScore > 20) {
+                targetAnimationName = "idle_critical";
+            } else {
+                targetAnimationName = "idle_alert";
+            }
+            
+            const targetAnimation = animationActions[targetAnimationName];
+            
+            if (!targetAnimation) {
+                console.warn(`Animation "${targetAnimationName}" not found`);
+                return;
+            }
+            
+            if (!force && currentAnimationName === targetAnimationName) {
+                return;
+            }
+            
+            console.log(`Switching to animation: ${targetAnimationName}`);
+            
+            if (currentAnimation) {
+                currentAnimation.fadeOut(0.5);
+            }
+            
+            targetAnimation.reset();
+            targetAnimation.fadeIn(0.5);
+            targetAnimation.play();
+            
+            currentAnimation = targetAnimation;
+            currentAnimationName = targetAnimationName;
+            
+            // Only disable head following for alert animation
+            headFollowingEnabled = (targetAnimationName !== "idle_alert");
+            
+            updateMouthShape(healthScore);
+            updateMaterialState(targetAnimationName);
+            updateAnimationStatus();
+        }
+
+        function forceAnimation(animName) {
+            if (!mixer || !animationActions[animName]) {
+                console.error(`Animation "${animName}" not available`);
+                return;
+            }
+            
+            forcedAnimationMode = true;
+            currentForcedAnimation = animName;
+            
+            if (currentAnimation) {
+                currentAnimation.fadeOut(0.3);
+            }
+            
+            animationActions[animName].reset();
+            animationActions[animName].fadeIn(0.3);
+            animationActions[animName].play();
+            
+            currentAnimation = animationActions[animName];
+            currentAnimationName = animName;
+            
+            // Disable head following for alert animation
+            headFollowingEnabled = (animName !== "idle_alert");
+            
+            // Update materials
+            updateMaterialState(animName);
+            
+            // Update UI
+            updateAnimationStatus();
+            updateForceButtonStates();
+        }
+
+        function resetToSensorMode() {
+            forcedAnimationMode = false;
+            currentForcedAnimation = null;
+            updateAnimationBasedOnHealth(state.healthScore, true);
+            updateForceButtonStates();
+        }
+
+        function updateMouthShape(healthScore) {
+            if (!mouthMesh || happyMouthIndex === -1 || sadMouthIndex === -1) {
+                return;
+            }
+            
+            if (mouthMesh.morphTargetInfluences) {
+                // Reset all morph targets
+                for (let i = 0; i < mouthMesh.morphTargetInfluences.length; i++) {
+                    mouthMesh.morphTargetInfluences[i] = 0;
+                }
+                
+                // Apply appropriate mouth shape based on health
+                if (healthScore >= 80) {
+                    // Healthy: Full happy smile
+                    mouthMesh.morphTargetInfluences[happyMouthIndex] = 1.0;
+                } else if (healthScore >= 50) {
+                    // Stressed: Slight smile (30%)
+                    mouthMesh.morphTargetInfluences[happyMouthIndex] = 0.3;
+                } else if (healthScore >= 20) {
+                    // Critical: Neutral mouth
+                    mouthMesh.morphTargetInfluences[happyMouthIndex] = 0;
+                } else {
+                    // Alert: Sad mouth
+                    mouthMesh.morphTargetInfluences[sadMouthIndex] = 1.0;
+                }
+            }
+        }
+
+        function updateMaterialState(animationName) {
+            if (!materialStates[animationName]) {
+                console.warn(`No material state defined for animation: ${animationName}`);
+                return;
+            }
+            
+            currentMaterialState = animationName;
+            
+            // Update UI indicator
+            const state = materialStates[animationName];
+            const stateColorEl = document.getElementById('materialStateColor');
+            const stateTextEl = document.getElementById('materialStateText');
+            
+            if (stateColorEl) stateColorEl.style.background = state.stateColor;
+            if (stateTextEl) stateTextEl.textContent = state.stateName;
+        }
+
+        function updateMaterials() {
+            if (!materialStates[currentMaterialState]) return;
+            
+            const targetState = materialStates[currentMaterialState];
+            
+            // Smoothly transition body materials
+            bodyMaterials.forEach(mat => {
+                if (mat && mat.color) {
+                    mat.color.lerp(targetState.bodyColor, materialTransitionSpeed);
+                    
+                    // Add rust effect with roughness
+                    if (mat.roughness !== undefined) {
+                        if (currentMaterialState === 'idle_healthy') {
+                            mat.roughness = 0.3; // Smooth metallic
+                        } else if (currentMaterialState === 'idle_stressed') {
+                            mat.roughness = 0.6; // Slightly rough
+                        } else if (currentMaterialState === 'idle_critical') {
+                            mat.roughness = 0.8; // Rough rust
+                        } else if (currentMaterialState === 'idle_alert') {
+                            mat.roughness = 0.9; // Very rough/damaged
+                        }
+                    }
+                }
+            });
+            
+            // Update eye materials (pupils)
+            eyeMaterials.forEach(mat => {
+                if (mat && mat.color) {
+                    mat.color.lerp(targetState.eyeColor, materialTransitionSpeed * 2);
+                    
+                    // Adjust emission for eye glow
+                    if (mat.emissive) {
+                        if (currentMaterialState === 'idle_alert') {
+                            // Turn off emission for alert state
+                            mat.emissive.lerp(new THREE.Color(0x000000), materialTransitionSpeed * 2);
+                        } else {
+                            mat.emissive.lerp(targetState.eyeColor, materialTransitionSpeed * 2);
+                        }
+                    }
+                }
+            });
+            
+            // Update joint materials
+            jointMaterials.forEach(mat => {
+                if (mat && mat.color) {
+                    mat.color.lerp(targetState.jointColor, materialTransitionSpeed);
+                }
+            });
+            
+            // Update teal accent materials
+            tealMaterials.forEach(mat => {
+                if (mat && mat.color) {
+                    mat.color.lerp(targetState.tealColor, materialTransitionSpeed * 2);
+                }
+            });
+            
+            // Update red accent materials (antenna tips)
+            redMaterials.forEach(mat => {
+                if (mat && mat.color) {
+                    mat.color.lerp(targetState.redColor, materialTransitionSpeed * 2);
+                    
+                    // Adjust emission for red parts
+                    if (mat.emissive) {
+                        if (currentMaterialState === 'idle_alert') {
+                            // Turn off emission for alert state
+                            mat.emissive.lerp(new THREE.Color(0x000000), materialTransitionSpeed * 2);
+                        } else {
+                            mat.emissive.lerp(targetState.redColor, materialTransitionSpeed * 2);
+                        }
+                    }
+                }
+            });
+        }
+
+        // Helper function to find materials by name or color
+        function findMaterials(robot) {
+            if (!robot) return;
+            
+            robot.traverse((child) => {
+                if (child.isMesh) {
+                    const materials = Array.isArray(child.material) ? child.material : [child.material];
+                    
+                    materials.forEach(mat => {
+                        if (!mat) return;
+                        
+                        // Log material for debugging
+                        console.log("Found material:", mat.name, "on mesh:", child.name);
+                        
+                        // Check by name first
+                        if (mat.name) {
+                            const name = mat.name.toLowerCase();
+                            if (name.includes('body') || name.includes('silver') || name.includes('main')) {
+                                if (!bodyMaterials.includes(mat)) bodyMaterials.push(mat);
+                            } else if (name.includes('eye') && !name.includes('socket')) {
+                                if (!eyeMaterials.includes(mat)) eyeMaterials.push(mat);
+                            } else if (name.includes('joint') || name.includes('dark')) {
+                                if (!jointMaterials.includes(mat)) jointMaterials.push(mat);
+                            } else if (name.includes('teal') || name.includes('cyan')) {
+                                if (!tealMaterials.includes(mat)) tealMaterials.push(mat);
+                            } else if (name.includes('red')) {
+                                if (!redMaterials.includes(mat)) redMaterials.push(mat);
+                            }
+                        }
+                        
+                        // Also check by color for fallback
+                        if (mat.color) {
+                            const colorHex = mat.color.getHex();
+                            // Check for silver/metallic colors
+                            if (colorHex === 0xcccccc || colorHex === 0xd4d4d4 || colorHex === 0xaaaaaa) {
+                                if (!bodyMaterials.includes(mat)) bodyMaterials.push(mat);
+                            }
+                            // Check for blue/teal colors
+                            else if (colorHex === 0x00f0ff || colorHex === 0x00ffff || colorHex === 0x0088ff) {
+                                if (!eyeMaterials.includes(mat) && !tealMaterials.includes(mat)) {
+                                    // Try to determine if it's eye or teal by mesh name
+                                    if (child.name.includes('Pupil') || child.name.includes('Eye')) {
+                                        if (!eyeMaterials.includes(mat)) eyeMaterials.push(mat);
+                                    } else {
+                                        if (!tealMaterials.includes(mat)) tealMaterials.push(mat);
+                                    }
+                                }
+                            }
+                            // Check for red colors
+                            else if (colorHex === 0xff0000 || colorHex === 0xff4444) {
+                                if (!redMaterials.includes(mat)) redMaterials.push(mat);
+                            }
+                        }
+                    });
+                }
+            });
+            
+            console.log("Found materials:");
+            console.log("Body materials:", bodyMaterials.length);
+            console.log("Eye materials:", eyeMaterials.length);
+            console.log("Joint materials:", jointMaterials.length);
+            console.log("Teal materials:", tealMaterials.length);
+            console.log("Red materials:", redMaterials.length);
+        }
+
+        function updateAnimationStatus() {
+            const statusEl = document.getElementById('currentAnimationStatus');
+            if (statusEl) {
+                statusEl.textContent = currentAnimationName || '--';
+                if (forcedAnimationMode) {
+                    statusEl.innerHTML = `<span style="color: var(--primary)">${currentAnimationName} (Forced)</span>`;
+                } else {
+                    statusEl.innerHTML = `<span style="color: var(--success)">${currentAnimationName} (Sensor)</span>`;
+                }
+            }
+        }
+
+        function updateForceButtonStates() {
+            document.querySelectorAll('.force-btn').forEach(btn => {
+                if (btn.dataset.anim === currentForcedAnimation) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            // --- GLOBAL VARIABLES ---
-            const state = { bpm: 0, spo2: 0, temp: 0, healthScore: 100 };
-            const mouse = { x: 0, y: 0 };
+            container = document.getElementById('three-canvas-container');
+            customCursor = document.getElementById('customCursor');
+
+            if (window.innerWidth > 900) {
+                customCursor.style.display = 'block';
+            }
+
+            // Setup animation mode selector
+            const animationModeSelect = document.getElementById('animationMode');
+            const forcedControls = document.getElementById('forcedControls');
             
-            let robot, eyeL, eyeR, head;
-            let isDemoActive = false;
-            let simInterval;
+            animationModeSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'forced') {
+                    forcedControls.style.display = 'block';
+                    if (!currentForcedAnimation) {
+                        forceAnimation('idle_healthy');
+                    }
+                } else {
+                    forcedControls.style.display = 'none';
+                    resetToSensorMode();
+                }
+            });
             
-            const clock = new THREE.Clock();
-            const container = document.getElementById('three-canvas-container');
-            let charts = {};
-            let camera, renderer;
+            // Setup force animation buttons
+            document.querySelectorAll('.force-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    forceAnimation(btn.dataset.anim);
+                });
+            });
 
             // --- INIT ---
             initThreeJS();
             initCharts();
             animate();
 
-            // --- 1. THREE.JS SETUP ---
+            // --- 1. THREE.JS SETUP WITH ANIMATIONS ---
             function initThreeJS() {
-                const scene = new THREE.Scene();
+                scene = new THREE.Scene();
                 // Renderer
                 renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setSize(container.clientWidth, container.clientHeight);
@@ -312,7 +879,7 @@
                 // Camera
                 camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
                 
-                // --- FIXED: AUTO-CENTERING CAMERA ---
+                // Adjust camera
                 adjustCameraPosition();
 
                 // Lighting
@@ -326,114 +893,353 @@
                 backLight.position.set(-5, 5, -5);
                 scene.add(backLight);
 
-                // --- LOAD ROBOT (Original GLTFLoader Code) ---
+                // --- LOAD ROBOT WITH ANIMATIONS ---
                 const loader = new THREE.GLTFLoader();
 
-                try {
-                    loader.load('Robot.glb', (gltf) => {
+                loader.load('Robot.glb', 
+                    (gltf) => {
+                        console.log("Robot GLTF loaded successfully");
                         robot = gltf.scene;
                         scene.add(robot);
                         robot.position.y = -1.0;
-                        robot.rotation.y = Math.PI; 
+                        robot.rotation.y = Math.PI;
 
-                        eyeL = robot.getObjectByName('Eye_L');
-                        eyeR = robot.getObjectByName('Eye_R');
-                        head = robot.getObjectByName('Head');
+                        // Find bones for animation control
+                        robot.traverse((child) => {
+                            if (child.isBone) {
+                                console.log("Found bone:", child.name);
+                                
+                                // Look for eye bones (from your Blender hierarchy)
+                                if (child.name.includes('Eye') && !child.name.includes('Pupil')) {
+                                    if (child.name.includes('L') || child.name.includes('Left')) {
+                                        eyeLBone = child;
+                                        console.log("Found left eye bone:", child.name);
+                                    }
+                                    if (child.name.includes('R') || child.name.includes('Right')) {
+                                        eyeRBone = child;
+                                        console.log("Found right eye bone:", child.name);
+                                    }
+                                }
+                                
+                                // Look for head bone
+                                if (child.name.includes('Head') && !child.name.includes('Tip')) {
+                                    headBone = child;
+                                    console.log("Found head bone:", child.name);
+                                }
+                                
+                                // Look for neck bone
+                                if (child.name.includes('Neck')) {
+                                    neckBone = child;
+                                    console.log("Found neck bone:", child.name);
+                                }
+                            }
+                            
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                                
+                                // Find pupils for color change
+                                if (child.name.includes('Pupil_L')) {
+                                    pupilL = child;
+                                    console.log("Found left pupil:", child.name);
+                                }
+                                if (child.name.includes('Pupil_R')) {
+                                    pupilR = child;
+                                    console.log("Found right pupil:", child.name);
+                                }
+                                
+                                // Find mouth mesh
+                                if ((child.name.includes('Mouth') || child.name.includes('Head')) && child.morphTargetDictionary) {
+                                    mouthMesh = child;
+                                    console.log("Found mouth mesh:", child.name);
+                                    
+                                    const morphDict = child.morphTargetDictionary;
+                                    for (const key in morphDict) {
+                                        if (key.toLowerCase().includes('happy')) {
+                                            happyMouthIndex = morphDict[key];
+                                            console.log("Found happy morph at index:", happyMouthIndex);
+                                        }
+                                        if (key.toLowerCase().includes('sad')) {
+                                            sadMouthIndex = morphDict[key];
+                                            console.log("Found sad morph at index:", sadMouthIndex);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // Find and categorize materials
+                        findMaterials(robot);
+
+                        // Setup animation system
+                        setupAnimations(gltf);
                         
-                        robot.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-                    }, undefined, (e) => {
-                        console.warn("GLB Load Failed. Using Fallback.");
+                        // Start with healthy animation
+                        updateAnimationBasedOnHealth(100, true);
+                        updateAnimationStatus();
+                        
+                        // Initialize material state
+                        updateMaterialState('idle_healthy');
+                    },
+                    (xhr) => {
+                        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                    },
+                    (error) => {
+                        console.error("GLB Load Failed:", error);
                         createProceduralRobot();
+                    }
+                );
+
+                // --- HELPER: SETUP ANIMATIONS ---
+                function setupAnimations(gltf) {
+                    if (!gltf.animations || gltf.animations.length === 0) {
+                        console.warn("No animations found in GLTF file");
+                        return;
+                    }
+
+                    console.log("Found animations:", gltf.animations.map(a => a.name));
+                    
+                    // Create animation mixer
+                    mixer = new THREE.AnimationMixer(robot);
+                    
+                    // Create actions for each animation clip
+                    const animationClips = gltf.animations;
+                    
+                    // Find animations by name (case-insensitive)
+                    animationActions = {
+                        idle_healthy: null,
+                        idle_stressed: null,
+                        idle_critical: null,
+                        idle_alert: null
+                    };
+                    
+                    animationClips.forEach(clip => {
+                        const name = clip.name.toLowerCase();
+                        
+                        if (name === 'idle_healthy' || name === 'idle_healthy') {
+                            animationActions.idle_healthy = mixer.clipAction(clip);
+                        } else if (name === 'idle_stressed') {
+                            animationActions.idle_stressed = mixer.clipAction(clip);
+                        } else if (name === 'idle_critical') {
+                            animationActions.idle_critical = mixer.clipAction(clip);
+                        } else if (name === 'idle_alert') {
+                            animationActions.idle_alert = mixer.clipAction(clip);
+                        }
                     });
-                } catch (e) { createProceduralRobot(); }
+                    
+                    // If not found by exact name, try partial matching
+                    if (!animationActions.idle_healthy) {
+                        const healthyClip = animationClips.find(clip => 
+                            clip.name.toLowerCase().includes('healthy') || 
+                            clip.name.toLowerCase().includes('idle')
+                        );
+                        if (healthyClip) animationActions.idle_healthy = mixer.clipAction(healthyClip);
+                    }
+                    
+                    if (!animationActions.idle_stressed) {
+                        const stressedClip = animationClips.find(clip => 
+                            clip.name.toLowerCase().includes('stressed')
+                        );
+                        if (stressedClip) animationActions.idle_stressed = mixer.clipAction(stressedClip);
+                    }
+                    
+                    if (!animationActions.idle_critical) {
+                        const criticalClip = animationClips.find(clip => 
+                            clip.name.toLowerCase().includes('critical')
+                        );
+                        if (criticalClip) animationActions.idle_critical = mixer.clipAction(criticalClip);
+                    }
+                    
+                    if (!animationActions.idle_alert) {
+                        const alertClip = animationClips.find(clip => 
+                            clip.name.toLowerCase().includes('alert')
+                        );
+                        if (alertClip) animationActions.idle_alert = mixer.clipAction(alertClip);
+                    }
+                    
+                    // Configure all found animations
+                    for (const key in animationActions) {
+                        if (animationActions[key]) {
+                            animationActions[key].setLoop(THREE.LoopRepeat);
+                            animationActions[key].clampWhenFinished = false;
+                            console.log(`Configured animation: ${key}`);
+                        }
+                    }
+                    
+                    // IMPORTANT: Stop the pupil animations if they exist
+                    const pupilAnimations = animationClips.filter(clip => 
+                        clip.name.toLowerCase().includes('pupil')
+                    );
+                    
+                    pupilAnimations.forEach(clip => {
+                        const action = mixer.clipAction(clip);
+                        action.stop(); // Stop these animations so we can control pupils manually
+                        console.log(`Stopped pupil animation: ${clip.name}`);
+                    });
+                }
 
                 // --- HELPER: FALLBACK ROBOT ---
                 function createProceduralRobot() {
-                    if(robot) return;
                     const group = new THREE.Group();
                     const mat = new THREE.MeshStandardMaterial({color: 0xcccccc});
                     const eyeMat = new THREE.MeshBasicMaterial({color: 0x00F0FF});
                     
-                    head = new THREE.Group(); head.position.y = 1.0; group.add(head);
-                    head.add(new THREE.Mesh(new THREE.BoxGeometry(1.2, 1, 1), mat));
+                    head = new THREE.Group(); 
+                    head.position.y = 1.0; 
+                    group.add(head);
+                    
+                    const headMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1, 1), mat);
+                    head.add(headMesh);
                     head.name = "Head";
                     
                     eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.15), eyeMat);
-                    eyeL.position.set(-0.3, 0.1, 0.5); head.add(eyeL);
+                    eyeL.name = "Eye_L";
+                    eyeL.position.set(-0.3, 0.1, 0.5); 
+                    head.add(eyeL);
+                    
                     eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.15), eyeMat);
-                    eyeR.position.set(0.3, 0.1, 0.5); head.add(eyeR);
+                    eyeR.name = "Eye_R";
+                    eyeR.position.set(0.3, 0.1, 0.5); 
+                    head.add(eyeR);
                     
                     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.2, 32), mat);
-                    body.position.y = 0; group.add(body);
+                    body.position.y = 0; 
+                    group.add(body);
                     
                     scene.add(group);
                     robot = group;
                     robot.position.y = -1.0;
+                    
+                    // Set fallback materials
+                    bodyMaterials.push(mat);
+                    eyeMaterials.push(eyeMat);
                 }
 
-                // --- INPUT EVENTS ---
-                
-                // MOUSE MOVEMENT
+                // --- INPUT EVENTS FOR FULL SCREEN TRACKING ---
+                function updateMousePosition(x, y) {
+                    const viewportCenterX = window.innerWidth * 0.225;
+                    const viewportCenterY = (window.innerHeight - 50) * 0.5 + 25;
+                    
+                    const offsetX = x - viewportCenterX;
+                    const offsetY = viewportCenterY - y;
+                    
+                    mouse.normalizedX = THREE.MathUtils.clamp(offsetX / (window.innerWidth * 0.5), -1, 1);
+                    mouse.normalizedY = THREE.MathUtils.clamp(offsetY / (window.innerHeight * 0.5), -1, 1);
+                    
+                    mouse.targetX = (x / window.innerWidth) * 2 - 1;
+                    mouse.targetY = -(y / window.innerHeight) * 2 + 1;
+                    
+                    if (customCursor.style.display !== 'none') {
+                        customCursor.style.left = `${x}px`;
+                        customCursor.style.top = `${y}px`;
+                    }
+                }
+
+                // MOUSE MOVEMENT on entire window
                 document.addEventListener('mousemove', (e) => {
-                    updateInput(e.clientX, e.clientY);
+                    updateMousePosition(e.clientX, e.clientY);
                 });
 
-                // TOUCH MOVEMENT (For Mobile)
+                // TOUCH MOVEMENT on entire window
                 document.addEventListener('touchmove', (e) => {
-                    if(e.touches.length > 0) {
-                        // Optional: prevent scroll if touching the robot stage specifically
-                        // if(e.target.closest('.robot-stage')) e.preventDefault();
-                        updateInput(e.touches[0].clientX, e.touches[0].clientY);
+                    if (e.touches.length > 0) {
+                        updateMousePosition(e.touches[0].clientX, e.touches[0].clientY);
+                        e.preventDefault();
                     }
                 }, { passive: false });
 
-                function updateInput(x, y) {
-                    const rect = container.getBoundingClientRect();
-                    // Check if input is roughly within the canvas area
-                    if(x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-                        const canvasX = x - rect.left;
-                        const canvasY = y - rect.top;
-                        mouse.x = (canvasX / rect.width) * 2 - 1;
-                        mouse.y = -(canvasY / rect.height) * 2 + 1;
+                container.addEventListener('mouseenter', () => {
+                    if (window.innerWidth > 900) {
+                        customCursor.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                        customCursor.style.borderColor = 'var(--primary)';
                     }
-                }
+                });
+
+                container.addEventListener('mouseleave', () => {
+                    if (window.innerWidth > 900) {
+                        customCursor.style.transform = 'translate(-50%, -50%) scale(1)';
+                        customCursor.style.borderColor = 'var(--primary)';
+                    }
+                });
 
                 // --- RESIZE HANDLER ---
                 window.addEventListener('resize', () => {
                     renderer.setSize(container.clientWidth, container.clientHeight);
                     camera.aspect = container.clientWidth / container.clientHeight;
                     camera.updateProjectionMatrix();
-                    adjustCameraPosition(); // Re-check camera position on resize
+                    adjustCameraPosition();
+                    
+                    if (window.innerWidth > 900) {
+                        customCursor.style.display = 'block';
+                        document.body.style.cursor = 'none';
+                    } else {
+                        customCursor.style.display = 'none';
+                        document.body.style.cursor = 'auto';
+                    }
                 });
 
                 // --- ANIMATION LOOP ---
                 window.animate = function() {
                     requestAnimationFrame(animate);
-                    const time = clock.getElapsedTime();
+                    const delta = clock.getDelta();
 
-                    if (robot) {
-                        const score = state.healthScore;
-                        const speed = score < 80 ? 8 : 2; 
-                        const amp = score < 50 ? 0.02 : 0.05; 
-                        const baseY = score < 50 ? -1.2 : -1.0;
+                    // Update animation mixer
+                    if (mixer) {
+                        mixer.update(delta);
+                    }
+
+                    // Smoothly interpolate mouse position
+                    mouse.x += (mouse.normalizedX - mouse.x) * 0.15;
+                    mouse.y += (mouse.normalizedY - mouse.y) * 0.15;
+
+                    // Apply head and eye following if enabled
+                    if (robot && headFollowingEnabled) {
+                        // Calculate target rotations based on mouse position
+                        const targetHeadRotationY = THREE.MathUtils.clamp(mouse.x * 0.5, -0.5, 0.5);
+                        const targetHeadRotationX = THREE.MathUtils.clamp(mouse.y * 0.3, -0.3, 0.3);
                         
-                        robot.position.y = THREE.MathUtils.lerp(robot.position.y, baseY + Math.sin(time * speed) * amp, 0.1);
-
-                        if (eyeL && eyeR) {
-                            let tx = Math.max(-0.7, Math.min(0.7, mouse.x * 0.5));
-                            let ty = Math.max(-0.5, Math.min(0.5, mouse.y * 0.5));
-                            
-                            eyeL.rotation.y = THREE.MathUtils.lerp(eyeL.rotation.y, tx, 0.1);
-                            eyeL.rotation.x = THREE.MathUtils.lerp(eyeL.rotation.x, ty, 0.1);
-                            eyeR.rotation.y = THREE.MathUtils.lerp(eyeR.rotation.y, tx, 0.1);
-                            eyeR.rotation.x = THREE.MathUtils.lerp(eyeR.rotation.x, ty, 0.1);
-
-                            if(head) {
-                                head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, tx * 0.5, 0.05);
-                                head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, ty * 0.5, 0.05);
-                            }
+                        // Calculate eye rotations (eyes move more than head)
+                        const targetEyeRotationY = THREE.MathUtils.clamp(mouse.x * 0.8, -0.8, 0.8);
+                        const targetEyeRotationX = THREE.MathUtils.clamp(mouse.y * 0.5, -0.5, 0.5);
+                        
+                        // Apply rotation to head bone if found
+                        if (headBone) {
+                            headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, targetHeadRotationY, 0.1);
+                            headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, targetHeadRotationX, 0.1);
+                        }
+                        
+                        // Apply rotation to neck bone if found
+                        if (neckBone) {
+                            neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, targetHeadRotationY * 0.5, 0.08);
+                            neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, targetHeadRotationX * 0.5, 0.08);
+                        }
+                        
+                        // Apply rotation to eye bones if found
+                        if (eyeLBone) {
+                            eyeLBone.rotation.y = THREE.MathUtils.lerp(eyeLBone.rotation.y, targetEyeRotationY, 0.15);
+                            eyeLBone.rotation.x = THREE.MathUtils.lerp(eyeLBone.rotation.x, targetEyeRotationX, 0.15);
+                        }
+                        
+                        if (eyeRBone) {
+                            eyeRBone.rotation.y = THREE.MathUtils.lerp(eyeRBone.rotation.y, targetEyeRotationY, 0.15);
+                            eyeRBone.rotation.x = THREE.MathUtils.lerp(eyeRBone.rotation.x, targetEyeRotationX, 0.15);
+                        }
+                        
+                        // If we don't have eye bones, try to rotate the pupil meshes directly
+                        if (!eyeLBone && pupilL) {
+                            pupilL.rotation.y = THREE.MathUtils.lerp(pupilL.rotation.y, targetEyeRotationY, 0.15);
+                            pupilL.rotation.x = THREE.MathUtils.lerp(pupilL.rotation.x, targetEyeRotationX, 0.15);
+                        }
+                        
+                        if (!eyeRBone && pupilR) {
+                            pupilR.rotation.y = THREE.MathUtils.lerp(pupilR.rotation.y, targetEyeRotationY, 0.15);
+                            pupilR.rotation.x = THREE.MathUtils.lerp(pupilR.rotation.x, targetEyeRotationX, 0.15);
                         }
                     }
+                    
+                    // Update materials with smooth transitions
+                    updateMaterials();
+                    
                     renderer.render(scene, camera);
                 }
             }
@@ -444,13 +1250,10 @@
                 const aspect = container.clientWidth / container.clientHeight;
                 
                 if (window.innerWidth < 900) {
-                    // MOBILE: Move camera BACK so robot fits in the narrow screen
-                    // If aspect ratio is very narrow (portrait), move even further back
                     const dist = aspect < 0.6 ? 9 : 7; 
                     camera.position.set(0, 0, dist);
-                    camera.lookAt(0, -0.5, 0); // Look slightly down at robot center
+                    camera.lookAt(0, -0.5, 0);
                 } else {
-                    // DESKTOP: Standard position
                     camera.position.set(0, 0.5, 5);
                     camera.lookAt(0, 0, 0);
                 }
@@ -492,6 +1295,11 @@
                     hwDot.style.background = "#555"; hwDot.style.boxShadow = "none";
                     disclaimer.style.opacity = 0;
                     resetData();
+                    
+                    // When simulation turns off, set health to 100 and play idle_healthy
+                    state.healthScore = 100;
+                    updateUI();
+                    resetToSensorMode();
                 }
             };
 
@@ -508,6 +1316,11 @@
                 updateCharts(bpm, spo2, temp);
                 generateAIAnalysis(state.healthScore, bpm, spo2);
                 updateRobotAppearance(state.healthScore);
+                
+                // Update animation based on new health score (unless forced mode)
+                if (!forcedAnimationMode) {
+                    updateAnimationBasedOnHealth(state.healthScore);
+                }
             }
 
             function updateUI() {
@@ -529,14 +1342,12 @@
             }
 
             function updateRobotAppearance(score) {
-                let hex = 0x00F0FF; 
-                if (score < 50) hex = 0xff0000;
-                else if (score < 80) hex = 0xffaa00;
-                else hex = 0x00F0FF;
-
-                const col = new THREE.Color(hex);
-                if (eyeL && eyeL.material) eyeL.material.color.lerp(col, 0.2);
-                if (eyeR && eyeR.material) eyeR.material.color.lerp(col, 0.2);
+                // Only update the cursor color
+                if (window.innerWidth > 900) {
+                    if (score < 50) customCursor.style.borderColor = 'var(--danger)';
+                    else if (score < 80) customCursor.style.borderColor = 'var(--warning)';
+                    else customCursor.style.borderColor = 'var(--primary)';
+                }
             }
 
             // --- 4. CHARTS & AI ---
