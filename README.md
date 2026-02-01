@@ -64,6 +64,7 @@ Works on desktop and mobile without framework bloat.
 ### Hardware
 - ESP32 Dev Board (DOIT DEVKIT V1)
 - MAX30102 Pulse Oximeter & Heart Rate Sensor
+- Ad8232 ECG Sensor
 - I2C  
   - SDA: GPIO 21  
   - SCL: GPIO 22  
