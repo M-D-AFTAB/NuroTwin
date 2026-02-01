@@ -559,7 +559,6 @@
 <body>
     <div class="custom-cursor" id="customCursor"></div>
 
-    <!-- Animation Control Panel -->
     <div class="animation-controls">
         <h4><i class="fas fa-cog"></i> Robot Controls</h4>
 
@@ -633,8 +632,7 @@
                 <h1>Cognitive Health Twin</h1>
                 <p>Real-time digital interface monitoring physiological data via ESP32 sensors.</p>
                 <button class="btn-connect" onclick="toggleDemoMode()" id="btn-main">Connect Hardware</button>
-                <div id="demo-disclaimer" class="disclaimer" style="opacity:0;">* Demo Mode: Simulating sensor data
-                    stream.</div>
+                <div id="demo-disclaimer" class="disclaimer" style="opacity:0;">* Streaming live via WebSockets.</div>
                 <div style="margin-top: 30px;">
                     <h2>Live Vitals</h2>
                     <div class="card-row">
@@ -655,14 +653,19 @@
                         </div>
                     </div>
                     <div class="ai-panel" id="dashboard-ai-box">
-                        <i class="fas fa-robot"></i> <b>AI Insight:</b> System standby. Connect hardware to begin
-                        analysis.
+                        <i class="fas fa-robot"></i> <b>Gemini Insight Available</b>
                     </div>
                 </div>
             </div>
 
             <div id="page-bio" class="page-section">
                 <h1>Bio-Metrics Detail</h1>
+
+                <div class="chart-box" style="height: 200px; margin-bottom: 20px; border-color: var(--primary);">
+                    <h4><i class="fas fa-heartbeat"></i> Live ECG Lead II (Raw)</h4>
+                    <canvas id="chart-ecg-wave"></canvas>
+                </div>
+
                 <div class="chart-box" style="height: 250px; margin-bottom: 20px;">
                     <canvas id="chart-bpm-detail"></canvas>
                 </div>
@@ -691,7 +694,33 @@
                 <h1>AI Diagnostics</h1>
                 <div class="ai-panel" style="background: var(--surface); border: 1px solid var(--border);">
                     <ul class="ai-list" id="full-ai-list">
-                        <li>Waiting for data stream...</li>
+                        <li>Sleep
+
+                            Go to bed and wake up at the same time. Yes, even on weekends. Consistency beats perfection.
+
+                            Stop pretending screens don’t matter. Dim lights an hour before bed and keep the phone off
+                            your face.
+
+                            If you can’t sleep after 20 minutes, get up. Lying there stressing trains your brain to hate
+                            your bed.
+
+                            Diet </li>
+
+                       
+                        <li>Eat real food most of the time. If it needs a marketing slogan, be suspicious.
+
+                            Protein and fiber first. They keep you full and stabilize energy. Sugar spikes don’t.
+
+                            Drink water before you snack. Half the time you’re not hungry, you’re just underhydrated.
+                        </li>
+                         <li>
+                        Breaks
+
+                        Work in focused blocks, then stop. 60 to 90 minutes on, 5 to 10 minutes off.
+
+                        Stand up. Walk. Stretch. Your body is not designed to be a chair attachment.
+
+                        Breaks are not scrolling marathons. Do something that actually resets your brain. </li>
                     </ul>
                 </div>
             </div>
@@ -713,6 +742,9 @@
         // --- GLOBAL VARIABLES ---
         let state = { bpm: 0, spo2: 0, temp: 0, healthScore: 100 };
         let mouse = { x: 0, y: 0, targetX: 0, targetY: 0, normalizedX: 0, normalizedY: 0 };
+        let ws; // WebSocket
+        let ecgPhase = 0;
+        let ecgDataBuffer = Array(100).fill(0.0); // Buffer for the graph line
 
         let robot, eyeL, eyeR, head, neck, pupilL, pupilR;
         let isDemoActive = false;
@@ -1590,6 +1622,27 @@
                             pupilR.rotation.x = THREE.MathUtils.lerp(pupilR.rotation.x, targetEyeRotationX, 0.15);
                         }
                     }
+                    // --- PASTE THIS INSIDE window.animate() ---
+                    if (
+                        charts.ecg &&
+                        ws &&
+                        ws.readyState === WebSocket.OPEN
+                    ) {
+                        let bpm = state.bpm || 60;
+                        let delta = clock.getDelta();
+
+                        ecgPhase += (bpm / 60) * delta;
+                        if (ecgPhase > 1) ecgPhase -= 1;
+
+                        let val = getSyntheticECG(ecgPhase);
+                        val += (Math.random() - 0.5) * 0.02; // subtle biological noise
+
+                        const d = charts.ecg.data.datasets[0].data;
+                        d.shift();
+                        d.push(val);
+
+                        charts.ecg.update('none');
+                    }
 
                     // Update materials with smooth transitions
                     updateMaterials();
@@ -1622,63 +1675,91 @@
                 document.getElementById('page-' + pageId).classList.add('active');
             }
 
-            // --- 3. DEMO LOGIC ---
+            // --- 3. CONNECTION LOGIC (UPDATED FOR WEBSOCKET) ---
             window.toggleDemoMode = function () {
                 const btn = document.getElementById('btn-main');
-                const hwText = document.getElementById('hw-text');
-                const hwDot = document.getElementById('hw-dot');
-                const disclaimer = document.getElementById('demo-disclaimer');
 
-                isDemoActive = !isDemoActive;
-
-                if (isDemoActive) {
-                    btn.innerText = "Hardware Connected";
-                    btn.style.background = "var(--success)";
-                    btn.style.color = "#fff";
-                    hwText.innerText = "ONLINE"; hwText.style.color = "var(--success)";
-                    hwDot.style.background = "var(--success)"; hwDot.style.boxShadow = "0 0 10px var(--success)";
-                    disclaimer.style.opacity = 1;
-                    simInterval = setInterval(runSimulationStep, 2000);
-                    runSimulationStep();
-                } else {
-                    clearInterval(simInterval);
+                // 1. If already connected, close it.
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.close();
                     btn.innerText = "Connect Hardware";
                     btn.style.background = "var(--primary)";
                     btn.style.color = "#000";
-                    hwText.innerText = "STANDBY"; hwText.style.color = "#888";
-                    hwDot.style.background = "#555"; hwDot.style.boxShadow = "none";
-                    disclaimer.style.opacity = 0;
-                    resetData();
-
-                    // When simulation turns off, set health to 100 and play idle_healthy
-                    state.healthScore = 100;
-                    updateUI();
-                    resetToSensorMode();
+                    return;
                 }
+
+                // 2. HARDCODED IP (No more Alert Box!)
+                // Make sure this matches exactly what is in your Arduino Serial Monitor
+                const ip = "10.81.21.126";
+
+                // 3. Connect immediately
+                console.log("Attempting to connect to: " + ip);
+                btn.innerText = "Connecting...";
+
+                // Create the connection
+                ws = new WebSocket(`ws://${ip}/ws`);
+
+                ws.onopen = function () {
+                    console.log("Connected to Hardware!");
+                    btn.innerText = "Hardware Online";
+                    btn.style.background = "#10b981"; // Green color
+                    btn.style.color = "#fff";
+
+                    // Hide the instruction text if it exists
+                    const disclaimer = document.getElementById('demo-disclaimer');
+                    if (disclaimer) disclaimer.style.opacity = 0;
+                };
+
+                ws.onerror = function (error) {
+                    console.log("WebSocket Error: ", error);
+                    btn.innerText = "Connection Failed";
+                    btn.style.background = "#ef4444"; // Red color
+
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        btn.innerText = "Connect Hardware";
+                        btn.style.background = "var(--primary)";
+                        btn.style.color = "#000";
+                    }, 2000);
+                };
+
+                ws.onmessage = function (event) {
+                    try {
+                        const data = JSON.parse(event.data);
+
+                        // UPDATE STATE
+                        state.bpm = data.bpm;
+                        state.spo2 = data.spo2;
+                        state.temp = data.temp;
+
+                        // Update Text on Dashboard
+                        if (document.getElementById('dash-bpm')) document.getElementById('dash-bpm').innerText = state.bpm;
+                        if (document.getElementById('dash-spo2')) document.getElementById('dash-spo2').innerText = state.spo2;
+                        if (document.getElementById('dash-temp')) document.getElementById('dash-temp').innerText = state.temp;
+
+                        // Stress Logic
+                        let score = 100;
+                        if (data.stress === "Stressed") score = 60;
+                        if (data.stress === "Critical") score = 30;
+                        if (state.bpm > 115) score = 40;
+
+                        if (document.getElementById('val-health')) document.getElementById('val-health').innerText = score + "%";
+
+                        // Update Robot State
+                        if (typeof updateAnimationBasedOnHealth === "function") {
+                            updateAnimationBasedOnHealth(score);
+                        }
+
+                    } catch (e) { console.error(e); }
+                };
+
+                ws.onclose = function () {
+                    console.log("Disconnected");
+                    btn.innerText = "Connect Hardware";
+                    btn.style.background = "var(--primary)";
+                };
             };
 
-            function runSimulationStep() {
-                const bpm = Math.floor(Math.random() * (120 - 60) + 60);
-                const spo2 = Math.floor(Math.random() * (100 - 94) + 94);
-                const temp = (Math.random() * (37.5 - 36.2) + 36.2).toFixed(1);
-                state.bpm = bpm; state.spo2 = spo2; state.temp = temp;
-                let score = 100;
-                if (bpm > 100 || bpm < 50) score -= 20;
-                if (spo2 < 95) score -= (95 - spo2) * 5;
-                state.healthScore = Math.max(0, score);
-                updateUI();
-                updateCharts(bpm, spo2, temp);
-                generateAIAnalysis(state.healthScore, bpm, spo2);
-                updateRobotAppearance(state.healthScore);
-
-                // Update animation based on new health score (unless forced mode)
-                if (!forcedAnimationMode) {
-                    updateAnimationBasedOnHealth(state.healthScore);
-                }
-
-                // Voice Companion Update
-                voiceAssistant.process(state.healthScore);
-            }
 
             function updateUI() {
                 document.getElementById('dash-bpm').innerText = state.bpm;
@@ -1754,8 +1835,69 @@
                 }
             }
 
+            // --- HELPER: Generate P-QRS-T Waveform ---
+            function getSyntheticECG(phase) {
+                phase = phase % 1;
+
+                if (phase < 0.1) {
+                    // P wave
+                    return 0.15 * Math.sin(phase * Math.PI * 10);
+                }
+                if (phase < 0.12) {
+                    // Q dip
+                    return -0.15;
+                }
+                if (phase < 0.14) {
+                    // R spike
+                    return 1.2;
+                }
+                if (phase < 0.16) {
+                    // S dip
+                    return -0.25;
+                }
+                if (phase < 0.35) {
+                    // T wave
+                    return 0.3 * Math.sin((phase - 0.16) * Math.PI * 3);
+                }
+                return 0;
+            }
+
             function initCharts() {
                 const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { color: '#333' } } }, elements: { point: { radius: 0 } }, animation: false };
+
+                // 1. NEW ECG CHART
+                // Inside initCharts()...
+
+                charts.ecg = new Chart(document.getElementById('chart-ecg-wave'), {
+                    type: 'line',
+                    data: {
+                        labels: Array(100).fill(''),
+                        datasets: [{
+                            data: ecgDataBuffer,
+                            borderColor: '#00F0FF',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.15
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        interaction: { mode: 'none' },
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { display: false },
+                            y: {
+                                display: false,
+                                min: -1.5,
+                                max: 1.5
+                            }
+                        }
+                    }
+                });
+
+
                 charts.bpm = new Chart(document.getElementById('chart-bpm-detail'), { type: 'line', data: { labels: Array(20).fill(''), datasets: [{ data: Array(20).fill(70), borderColor: '#00F0FF', tension: 0.4 }] }, options: { ...commonOptions, plugins: { title: { display: true, text: 'Real-time Heart Rate' } } } });
                 charts.spo2 = new Chart(document.getElementById('chart-spo2-detail'), { type: 'line', data: { labels: Array(20).fill(''), datasets: [{ data: Array(20).fill(98), borderColor: '#10b981', tension: 0.4 }] }, options: { ...commonOptions, plugins: { title: { display: true, text: 'Real-time SpO2' } } } });
                 charts.temp = new Chart(document.getElementById('chart-temp-detail'), { type: 'line', data: { labels: Array(20).fill(''), datasets: [{ data: Array(20).fill(36.5), borderColor: '#f59e0b', tension: 0.4 }] }, options: { ...commonOptions, plugins: { title: { display: true, text: 'Real-time Temperature' } } } });
@@ -1765,7 +1907,16 @@
                 if (document.getElementById('chart-weight')) new Chart(document.getElementById('chart-weight'), { type: 'line', data: { labels: ['Wk1', 'Wk2', 'Wk3', 'Wk4'], datasets: [{ data: [72, 71.5, 71.0, 70.8], borderColor: '#00F0FF', tension: 0.2 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#333' } } } } });
             }
 
-            function updateCharts(bpm, spo2, temp) {
+            function updateCharts(bpm, spo2, temp, ecgVal) {
+                // Update ECG (Shift array)
+                if (charts.ecg && ecgVal !== undefined) {
+                    const d = charts.ecg.data.datasets[0].data;
+                    d.shift();
+                    d.push(ecgVal);
+                    charts.ecg.update('none'); // Fast update
+                }
+
+                // Update Vitals (Slow update)
                 [charts.bpm, charts.spo2, charts.temp].forEach((chart, i) => { if (chart) { const val = [bpm, spo2, temp][i]; const d = chart.data.datasets[0].data; d.shift(); d.push(val); chart.update(); } });
             }
         });
