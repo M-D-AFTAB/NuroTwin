@@ -11,6 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="favicon.jpeg" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    <script src="js/realHealthAI.js"></script>
     <style>
         /* --- CSS STYLES --- */
         :root {
@@ -482,6 +484,187 @@
             font-style: italic;
         }
 
+        /* Real AI System Styles */
+        .ai-status-bar {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-status-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+
+        .ai-recommendation-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-recommendation-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .ai-recommendation-card.high-urgency {
+            border-left-color: #EF4444;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.1), transparent);
+        }
+
+        .ai-recommendation-card.medium-urgency {
+            border-left-color: #F59E0B;
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), transparent);
+        }
+
+        .ai-recommendation-card.low-urgency {
+            border-left-color: #10B981;
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent);
+        }
+
+        .recommendation-urgency {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .recommendation-urgency.high {
+            background: #EF4444;
+            color: white;
+        }
+
+        .recommendation-urgency.medium {
+            background: #F59E0B;
+            color: black;
+        }
+
+        .recommendation-urgency.low {
+            background: #10B981;
+            color: white;
+        }
+
+        /* Neural Network Visualization */
+        .neural-node {
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            animation: pulseNode 2s infinite;
+        }
+
+        .neural-connection {
+            position: absolute;
+            background: rgba(0, 240, 255, 0.3);
+            height: 1px;
+            transform-origin: 0 0;
+        }
+
+        @keyframes pulseNode {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        /* Learning Animation */
+        @keyframes learningPulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.3);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .ai-learning {
+            animation: learningPulse 2s infinite;
+        }
+
+        /* Progress Bars */
+        .ai-progress-bar {
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .ai-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #7c3aed);
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        /* AI Animations */
+        .ai-recommendation-card {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideInUp 0.5s ease forwards;
+        }
+
+        /* Status animations */
+        @keyframes statusPulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .status-pulse {
+            animation: statusPulse 2s infinite;
+        }
+
         /* --- MOBILE RESPONSIVENESS --- */
         @media (max-width: 900px) {
             .layout-grid {
@@ -691,37 +874,178 @@
             </div>
 
             <div id="page-ai" class="page-section">
-                <h1>AI Diagnostics</h1>
-                <div class="ai-panel" style="background: var(--surface); border: 1px solid var(--border);">
-                    <ul class="ai-list" id="full-ai-list">
-                        <li>Sleep
+                <h1>🧠 Nuro AI Intelligence</h1>
+                <p>Machine learning system that analyzes your biometric patterns and provides personalized health
+                    guidance.</p>
 
-                            Go to bed and wake up at the same time. Yes, even on weekends. Consistency beats perfection.
+                <!-- AI Status Bar -->
+                <div class="ai-status-bar" style="
+        background: linear-gradient(135deg, #09090b 0%, #18181b 100%);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin: 20px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    ">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="position: relative;">
+                            <div id="ai-brain-status"
+                                style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-brain" style="color: white; font-size: 1.2em;"></i>
+                            </div>
+                            <div id="ai-learning-dot"
+                                style="position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; background: #10B981; border-radius: 50%; border: 2px solid var(--bg); display: none;">
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-weight: bold;">Nuro AI System</div>
+                            <div style="font-size: 0.9em; color: #a1a1aa;" id="ai-system-status">Initializing neural
+                                network...</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.9em; color: #666;" id="ai-data-points">0 data points collected</div>
+                        <div style="font-size: 0.8em; color: #555;" id="ai-learning-progress">Learning from your
+                            patterns</div>
+                    </div>
+                </div>
 
-                            Stop pretending screens don’t matter. Dim lights an hour before bed and keep the phone off
-                            your face.
+                <!-- AI Analysis Dashboard -->
+                <div class="charts-grid">
+                    <!-- AI Predictions -->
+                    <div class="chart-box" style="border-color: var(--primary);">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4><i class="fas fa-robot"></i> AI Health Prediction</h4>
+                            <div class="status-badge" id="ai-prediction-badge"
+                                style="background: rgba(0, 240, 255, 0.2); color: var(--primary); padding: 4px 12px; border-radius: 20px; font-size: 0.8em;">
+                                REAL-TIME
+                            </div>
+                        </div>
+                        <div style="text-align: center; padding: 20px 0;">
+                            <div id="ai-prediction-category"
+                                style="font-size: 2.5rem; font-weight: bold; color: var(--primary);">--</div>
+                            <div style="color: #a1a1aa; margin-bottom: 20px;" id="ai-prediction-text">AI analyzing...
+                            </div>
+                            <div style="display: flex; justify-content: center; gap: 20px;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.9em; color: #666;">Confidence</div>
+                                    <div id="ai-confidence" style="font-size: 1.2rem; font-weight: bold;">--%</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.9em; color: #666;">Model</div>
+                                    <div id="ai-model-type" style="font-size: 1.2rem; font-weight: bold;">Neural Net
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                            If you can’t sleep after 20 minutes, get up. Lying there stressing trains your brain to hate
-                            your bed.
+                    <!-- Personal Baseline -->
+                    <div class="chart-box">
+                        <h4><i class="fas fa-chart-line"></i> Your Personal Baseline</h4>
+                        <div id="personal-baseline" style="padding: 15px 0;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div style="background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px;">
+                                    <div style="font-size: 0.9em; color: #666;">Avg Heart Rate</div>
+                                    <div id="baseline-bpm"
+                                        style="font-size: 1.5rem; font-weight: bold; color: #10B981;">--</div>
+                                </div>
+                                <div style="background: rgba(0, 240, 255, 0.1); padding: 10px; border-radius: 8px;">
+                                    <div style="font-size: 0.9em; color: #666;">Avg Oxygen</div>
+                                    <div id="baseline-spo2"
+                                        style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">--</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.9em; color: #a1a1aa;" id="baseline-info">
+                                AI will establish your personal baseline after collecting data
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                            Diet </li>
+                <!-- Nuro AI Recommendations -->
+                <div style="margin: 30px 0;">
+                    <h2 style="border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
+                        <i class="fas fa-brain"></i> Nuro AI System
+                    </h2>
 
-                       
-                        <li>Eat real food most of the time. If it needs a marketing slogan, be suspicious.
+                    <div id="ai-advanced-report-container"></div>
+                    <div id="ai-recommendations-container">
+                        <!-- Recommendations will be dynamically inserted here -->
+                        <div style="text-align: center; padding: 40px 20px; color: #666;">
+                            <i class="fas fa-network-wired"
+                                style="font-size: 3em; margin-bottom: 20px; opacity: 0.5;"></i>
+                            <p>NuroTwin is learning from your biometric patterns.</p>
+                            <p>Connect hardware to receive Nuro Net insights.</p>
+                        </div>
+                    </div>
+                </div>
 
-                            Protein and fiber first. They keep you full and stabilize energy. Sugar spikes don’t.
+                <!-- AI Learning Insights -->
+                <div class="card-row">
+                    <div class="card" style="text-align: left;">
+                        <h3><i class="fas fa-history"></i> Pattern Recognition</h3>
+                        <div id="pattern-insights"
+                            style="min-height: 120px; display: flex; align-items: center; justify-content: center;">
+                            <div style="text-align: center; color: #666;">
+                                <i class="fas fa-chart-bar" style="font-size: 2em; margin-bottom: 10px;"></i>
+                                <p>Analyzing daily patterns...</p>
+                            </div>
+                        </div>
+                    </div>
 
-                            Drink water before you snack. Half the time you’re not hungry, you’re just underhydrated.
-                        </li>
-                         <li>
-                        Breaks
+                    <div class="card"
+                        style="text-align: left; background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(0, 240, 255, 0.1) 100%);">
+                        <h3><i class="fas fa-trend-up"></i> Health Trends</h3>
+                        <div id="health-trends"
+                            style="min-height: 120px; display: flex; align-items: center; justify-content: center;">
+                            <div style="text-align: center; color: #666;">
+                                <i class="fas fa-chart-line" style="font-size: 2em; margin-bottom: 10px;"></i>
+                                <p>Tracking improvements over time...</p>
+                            </div>
+                        </div>
+                    </div>
 
-                        Work in focused blocks, then stop. 60 to 90 minutes on, 5 to 10 minutes off.
+                    <div class="card" style="text-align: left;">
+                        <h3><i class="fas fa-cogs"></i> AI Settings</h3>
+                        <div style="margin-top: 15px;">
 
-                        Stand up. Walk. Stretch. Your body is not designed to be a chair attachment.
+                            <button onclick="runAdvancedDiagnosis()" id="btn-run-ai"
+                                style="width: 100%; padding: 10px; background: rgba(0, 240, 255, 0.1); color: var(--primary); border: 1px solid var(--primary); border-radius: 6px; margin-bottom: 10px; font-weight: bold;">
+                                <i class="fas fa-magic"></i> Run Advanced Diagnosis
+                            </button>
+                            <button onclick="resetAILearning()"
+                                style="width: 100%; padding: 10px; background: rgba(239, 68, 68, 0.1); color: #EF4444; border: 1px solid #EF4444; border-radius: 6px; margin-bottom: 10px;">
+                                <i class="fas fa-redo"></i> Reset Learning
+                            </button>
+                            <button onclick="exportAIData()"
+                                style="width: 100%; padding: 10px; background: rgba(16, 185, 129, 0.1); color: #10B981; border: 1px solid #10B981; border-radius: 6px;">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-                        Breaks are not scrolling marathons. Do something that actually resets your brain. </li>
-                    </ul>
+                <!-- AI System Info -->
+                <div
+                    style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 12px; border: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                        <i class="fas fa-info-circle" style="color: var(--primary); font-size: 1.2em;"></i>
+                        <h4 style="margin: 0;">How This AI Works</h4>
+                    </div>
+                    <div style="font-size: 0.9em; color: #a1a1aa; line-height: 1.6;">
+                        <p><strong>Neural Network:</strong> Uses TensorFlow.js to analyze biometric patterns in your
+                            browser.</p>
+                        <p><strong>Personalized Learning:</strong> Adapts to your unique physiological patterns over
+                            time.</p>
+                        <p><strong>Privacy-Focused:</strong> All learning happens locally in your browser - no data sent
+                            to servers.</p>
+                        <p><strong>Real-time Adaptation:</strong> Continuously updates recommendations based on your
+                            responses.</p>
+                    </div>
                 </div>
             </div>
 
@@ -737,7 +1061,7 @@
             </div>
         </div>
     </div>
-
+    <script src="js/realHealthAI.js"></script>
     <script>
         // --- GLOBAL VARIABLES ---
         let state = { bpm: 0, spo2: 0, temp: 0, healthScore: 100 };
@@ -1671,9 +1995,20 @@
                 document.querySelectorAll('.list-item a').forEach(el => el.classList.remove('active'));
                 const link = document.getElementById('nav-' + pageId);
                 if (link) link.classList.add('active');
+
                 document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
                 document.getElementById('page-' + pageId).classList.add('active');
-            }
+
+                // ============ INITIALIZE AI WHEN PAGE LOADS ============
+                if (pageId === 'ai') {
+                    console.log("AI page activated, initializing AI...");
+                    setTimeout(() => {
+                        if (typeof initRealAI === 'function') {
+                            initRealAI();
+                        }
+                    }, 300);
+                }
+            };
 
             // --- 3. CONNECTION LOGIC (UPDATED FOR WEBSOCKET) ---
             window.toggleDemoMode = function () {
@@ -1690,7 +2025,7 @@
 
                 // 2. HARDCODED IP (No more Alert Box!)
                 // Make sure this matches exactly what is in your Arduino Serial Monitor
-                const ip = "10.81.21.126";
+                const ip = "10.139.174.126";
 
                 // 3. Connect immediately
                 console.log("Attempting to connect to: " + ip);
@@ -1726,11 +2061,21 @@
                 ws.onmessage = function (event) {
                     try {
                         const data = JSON.parse(event.data);
+                        // console.log("WebSocket Data Received:", data); // REMOVED FOR PERFORMANCE
 
                         // UPDATE STATE
-                        state.bpm = data.bpm;
-                        state.spo2 = data.spo2;
-                        state.temp = data.temp;
+                        state.bpm = data.bpm || 0;
+                        state.spo2 = data.spo2 || 0;
+                        state.temp = data.temp || 0;
+
+                        // Update Hardware Status
+                        const hwDot = document.getElementById('hw-dot');
+                        const hwText = document.getElementById('hw-text');
+                        if (hwDot) {
+                            hwDot.style.background = '#10B981';
+                            hwText.textContent = 'LIVE DATA';
+                            hwText.style.color = '#10B981';
+                        }
 
                         // Update Text on Dashboard
                         if (document.getElementById('dash-bpm')) document.getElementById('dash-bpm').innerText = state.bpm;
@@ -1742,12 +2087,34 @@
                         if (data.stress === "Stressed") score = 60;
                         if (data.stress === "Critical") score = 30;
                         if (state.bpm > 115) score = 40;
+                        if (state.spo2 < 94) score -= 20;
+                        if (state.temp > 37.5) score -= 10;
 
-                        if (document.getElementById('val-health')) document.getElementById('val-health').innerText = score + "%";
+                        state.healthScore = Math.max(0, Math.min(100, score));
+
+                        if (document.getElementById('val-health')) document.getElementById('val-health').innerText = state.healthScore + "%";
+
+                        // Update UI Colors
+                        updateUI();
 
                         // Update Robot State
                         if (typeof updateAnimationBasedOnHealth === "function") {
-                            updateAnimationBasedOnHealth(score);
+                            updateAnimationBasedOnHealth(state.healthScore);
+                        }
+
+                        // Update Charts (Throttled to 5fps / 200ms)
+                        const now = Date.now();
+                        if (typeof updateCharts === "function" && (now - (window.lastChartUpdate || 0) > 200)) {
+                            updateCharts(state.bpm, state.spo2, state.temp);
+                            window.lastChartUpdate = now;
+                        }
+
+                        // ============ TRIGGER REAL AI (MOVED TO INTERVAL LOOP) ============
+                        // triggerRealAI removed from here to prevent lag
+
+                        // Update Voice Assistant
+                        if (voiceAssistant) {
+                            voiceAssistant.process(state.healthScore);
                         }
 
                     } catch (e) { console.error(e); }
@@ -1920,6 +2287,741 @@
                 [charts.bpm, charts.spo2, charts.temp].forEach((chart, i) => { if (chart) { const val = [bpm, spo2, temp][i]; const d = chart.data.datasets[0].data; d.shift(); d.push(val); chart.update(); } });
             }
         });
+
+
+
+        // ============================================
+        // REAL AI INTEGRATION
+        // ============================================
+
+        let realAI = null;
+        let lastAIAnalysis = null;
+
+        // Initialize Real AI System
+        // ============================================
+        // UPDATED AI INITIALIZATION
+        // ============================================
+
+        function initRealAI() {
+            console.log("=== INITIALIZING REAL AI ===");
+
+            // Check if TensorFlow.js is loaded
+            if (typeof tf === 'undefined') {
+                console.error("TensorFlow.js not loaded!");
+                loadTensorFlow();
+                return;
+            }
+
+            // Check if RealHealthAI class is available
+            if (typeof RealHealthAI === 'undefined') {
+                console.log("RealHealthAI class not found, loading script...");
+                loadAIScript();
+                return;
+            }
+
+            // Initialize AI instance
+            if (!realAI) {
+                // Defer initialization to next tick to allow UI to paint
+                setTimeout(() => {
+                    try {
+                        if (realAI) return; // check again
+                        realAI = new RealHealthAI();
+                        console.log("✅ Real AI System initialized successfully!");
+                        // console.log("Data points:", realAI.userHistory.length);
+
+                        // Update UI immediately (back on main thread)
+                        requestAnimationFrame(() => {
+                            updateAIStatus();
+
+                            // Start dedicated AI processing loop (Decoupled from WebSocket)
+                            if (window.aiInterval) clearInterval(window.aiInterval);
+                            window.aiInterval = setInterval(() => {
+                                if (state.bpm > 0) {
+                                    triggerRealAI(state.bpm, state.spo2, state.temp, state.healthScore);
+                                }
+                            }, 5000); // Check every 5 seconds
+
+                            // If we have current data, process it immediately once
+                            if (state.bpm > 0) {
+                                triggerRealAI(state.bpm, state.spo2, state.temp, state.healthScore);
+                            } else {
+                                // Show demo state
+                                showDemoAIState();
+                            }
+                        });
+
+
+                    } catch (error) {
+                        console.error("❌ AI initialization failed:", error);
+                        showAIFallback();
+                    }
+                }, 100);
+            } else {
+                console.log("AI already initialized");
+                updateAIStatus();
+            }
+        }
+
+        let isTfLoading = false;
+        function loadTensorFlow() {
+            if (typeof tf !== 'undefined' || isTfLoading) return;
+            isTfLoading = true;
+
+            console.log("Pre-loading TensorFlow.js...");
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js';
+            script.onload = function () {
+                console.log("TensorFlow.js loaded");
+                isTfLoading = false;
+                // If AI was requested while loading, init it now
+                if (window.pendingAIInit) initRealAI();
+            };
+            script.onerror = function () {
+                console.error("Failed to load TensorFlow.js");
+                isTfLoading = false;
+            };
+            document.head.appendChild(script);
+        }
+
+        // Auto-preload on idle
+        setTimeout(loadTensorFlow, 3000);
+
+        function loadAIScript() {
+            console.log("Loading RealHealthAI script...");
+            const script = document.createElement('script');
+            script.src = 'js/realHealthAI.js';
+            script.onload = function () {
+                console.log("RealHealthAI script loaded");
+                setTimeout(initRealAI, 500);
+            };
+            script.onerror = function () {
+                console.error("Failed to load RealHealthAI script");
+                showAIFallback();
+            };
+            document.head.appendChild(script);
+        }
+
+        function showDemoAIState() {
+            console.log("Showing demo AI state");
+
+            // Update status
+            const statusEl = document.getElementById('ai-system-status');
+            if (statusEl) {
+                statusEl.innerHTML = `<span style="color: #F59E0B;">⏳ Waiting for biometric data</span>`;
+            }
+
+            // Update baseline message
+            const baselineInfo = document.getElementById('baseline-info');
+            if (baselineInfo) {
+                baselineInfo.textContent = "Connect hardware to establish your personal baseline";
+            }
+
+            // Update suggestions container
+            const suggestionsContainer = document.getElementById('ai-recommendations-container');
+            if (suggestionsContainer) {
+                suggestionsContainer.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px;">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="fas fa-robot" style="color: white; font-size: 2em;"></i>
+                </div>
+                <h4 style="color: white; margin-bottom: 10px;">AI Ready to Learn</h4>
+                <p style="color: #a1a1aa; margin-bottom: 20px;">Connect your ESP32 hardware to start receiving personalized health insights</p>
+                <button onclick="toggleDemoMode()" class="btn-connect" style="margin-top: 10px;">
+                    <i class="fas fa-plug"></i> Connect Hardware
+                </button>
+            </div>
+        `;
+            }
+        }
+
+        function showAIFallback() {
+            console.log("Showing AI fallback interface");
+
+            const suggestionsContainer = document.getElementById('ai-recommendations-container');
+            if (suggestionsContainer) {
+                suggestionsContainer.innerHTML = `
+            <div style="text-align: center; padding: 30px 20px;">
+                <div style="color: #F59E0B; margin-bottom: 15px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2em;"></i>
+                </div>
+                <h4 style="color: white; margin-bottom: 10px;">Advanced AI System</h4>
+                <p style="color: #a1a1aa; margin-bottom: 15px;">Using rule-based analysis. Neural network requires TensorFlow.js.</p>
+                <div style="background: rgba(245, 158, 11, 0.1); padding: 15px; border-radius: 8px; text-align: left; margin-top: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <i class="fas fa-heart" style="color: #F59E0B;"></i>
+                        <div>
+                            <div style="font-weight: 500;">Sample Recommendation</div>
+                            <div style="font-size: 0.9em; color: #a1a1aa;">Connect hardware for personalized analysis</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+            }
+        }
+
+        // ============================================
+        // MAIN AI TRIGGER FUNCTION
+        // ============================================
+
+        let isAiProcessing = false;
+        let lastAiRunTime = 0;
+        const AI_COOLDOWN_MS = 5000; // Process AI at most once every 5 seconds
+
+        function triggerRealAI(bpm, spo2, temp, healthScore) {
+            const now = Date.now();
+
+            // If AI is already running or ran too recently, SKIP it (do not schedule for later)
+            if (isAiProcessing || (now - lastAiRunTime) < AI_COOLDOWN_MS) {
+                return;
+            }
+
+            isAiProcessing = true;
+            // console.log("Triggering throttled Real AI...");
+
+            // Use setTimeout to break the work into chunks and avoid blocking
+            setTimeout(() => {
+                if (!realAI) { initRealAI(); }
+                if (realAI) {
+                    processAIWithData(bpm, spo2, temp, healthScore);
+                }
+                isAiProcessing = false;
+                lastAiRunTime = Date.now();
+            }, 0);
+        }
+
+        function processAIWithData(bpm, spo2, temp, healthScore) {
+            if (!realAI) {
+                console.error("Real AI still not initialized!");
+                return;
+            }
+
+            console.log("Processing data with Real AI...");
+
+            // Add data point
+            const dataPoint = realAI.addDataPoint(bpm, spo2, temp, {
+                healthScore: healthScore
+            });
+
+            console.log("Data point added:", dataPoint);
+
+            // Update AI Status
+            updateAIStatus();
+
+            // Get and show predictions
+            realAI.predict(bpm, spo2, temp).then(prediction => {
+                console.log("AI Prediction:", prediction);
+                updateAIPredictionUI(prediction);
+            }).catch(err => {
+                console.error("Prediction error:", err);
+                updateAIPredictionUI(realAI.ruleBasedAnalysis(bpm, spo2, temp));
+            });
+
+            // Generate personalized suggestions
+            const suggestions = realAI.generatePersonalizedSuggestions(bpm, spo2, temp);
+            console.log("AI Suggestions:", suggestions);
+            updateAISuggestionsUI(suggestions);
+
+            // Update baseline
+            updateBaselineUI();
+
+            // Update patterns
+            updatePatternInsights();
+
+            // Update trends
+            updateHealthTrends();
+
+            // Show that AI is working
+            const statusEl = document.getElementById('ai-system-status');
+            if (statusEl) {
+                statusEl.innerHTML = `<span style="color: #10B981;">✓ Analyzing in real-time</span>`;
+            }
+        }
+
+        // Load AI script if not already loaded
+        function loadAIScript() {
+            const script = document.createElement('script');
+            script.src = 'js/realHealthAI.js';
+            script.onload = function () {
+                setTimeout(() => {
+                    initRealAI();
+                }, 1000);
+            };
+            document.head.appendChild(script);
+        }
+
+        // Process biometrics with AI
+        function processWithAI() {
+            if (!realAI || !state.bpm || !state.spo2 || !state.temp) return;
+
+            // Add data point to AI
+            realAI.addDataPoint(state.bpm, state.spo2, state.temp, {
+                timestamp: Date.now(),
+                healthScore: state.healthScore
+            });
+
+            // Get AI prediction
+            realAI.predict(state.bpm, state.spo2, state.temp).then(prediction => {
+                updateAIPredictionUI(prediction);
+            });
+
+            // Get personalized suggestions
+            const suggestions = realAI.generatePersonalizedSuggestions(
+                state.bpm,
+                state.spo2,
+                state.temp
+            );
+
+            updateAISuggestionsUI(suggestions);
+
+            // Update baseline display
+            updateBaselineUI();
+
+            // Update pattern insights
+            updatePatternInsights();
+
+            // Update health trends
+            updateHealthTrends();
+
+            // Update AI status
+            updateAIStatus();
+
+            lastAIAnalysis = {
+                timestamp: Date.now(),
+                suggestions: suggestions
+            };
+        }
+
+        // Update AI Prediction UI
+        function updateAIPredictionUI(prediction) {
+            console.log("Updating AI Prediction UI:", prediction);
+
+            const categoryEl = document.getElementById('ai-prediction-category');
+            const textEl = document.getElementById('ai-prediction-text');
+            const confidenceEl = document.getElementById('ai-confidence');
+            const badgeEl = document.getElementById('ai-prediction-badge');
+            const modelTypeEl = document.getElementById('ai-model-type');
+
+            if (!categoryEl || !textEl) return;
+
+            // Update category with animation
+            categoryEl.textContent = prediction.category;
+            categoryEl.style.opacity = '0';
+            setTimeout(() => {
+                categoryEl.style.opacity = '1';
+                categoryEl.style.transition = 'all 0.3s ease';
+
+                // Color based on category
+                if (prediction.category === 'Excellent') {
+                    categoryEl.style.color = '#10B981';
+                    categoryEl.style.textShadow = '0 0 10px rgba(16, 185, 129, 0.5)';
+                } else if (prediction.category === 'Good') {
+                    categoryEl.style.color = '#3B82F6';
+                    categoryEl.style.textShadow = '0 0 10px rgba(59, 130, 246, 0.5)';
+                } else if (prediction.category === 'Fair') {
+                    categoryEl.style.color = '#F59E0B';
+                    categoryEl.style.textShadow = '0 0 10px rgba(245, 158, 11, 0.5)';
+                } else {
+                    categoryEl.style.color = '#EF4444';
+                    categoryEl.style.textShadow = '0 0 10px rgba(239, 68, 68, 0.5)';
+                }
+            }, 100);
+
+            // Update text
+            if (prediction.source === 'AI Neural Network') {
+                textEl.innerHTML = `AI prediction with ${prediction.confidence}% confidence`;
+                if (modelTypeEl) modelTypeEl.textContent = 'Neural Net';
+            } else {
+                textEl.innerHTML = `Rule-based analysis (AI learning with more data)`;
+                if (modelTypeEl) modelTypeEl.textContent = 'Rule-Based';
+            }
+
+            // Update confidence
+            if (confidenceEl) {
+                confidenceEl.textContent = `${prediction.confidence}%`;
+                confidenceEl.style.opacity = '0';
+                setTimeout(() => {
+                    confidenceEl.style.opacity = '1';
+                    confidenceEl.style.transition = 'all 0.5s ease';
+
+                    // Color confidence based on value
+                    const confidence = parseFloat(prediction.confidence);
+                    if (confidence > 80) {
+                        confidenceEl.style.color = '#10B981';
+                    } else if (confidence > 60) {
+                        confidenceEl.style.color = '#3B82F6';
+                    } else if (confidence > 40) {
+                        confidenceEl.style.color = '#F59E0B';
+                    } else {
+                        confidenceEl.style.color = '#EF4444';
+                    }
+                }, 200);
+            }
+
+            // Update badge
+            if (badgeEl) {
+                badgeEl.innerHTML = `<i class="fas fa-bolt"></i> ${prediction.source}`;
+                badgeEl.classList.add('status-pulse-green');
+
+                setTimeout(() => {
+                    badgeEl.classList.remove('status-pulse-green');
+                }, 2000);
+            }
+        }
+
+        // Update AI Suggestions UI
+        let lastSuggestionUpdate = 0;
+        function updateAISuggestionsUI(suggestions) {
+            const now = Date.now();
+            if (now - lastSuggestionUpdate < 1000) return; // Throttle to once per second
+            lastSuggestionUpdate = now;
+
+            console.log("Updating Nuro AI Suggestions UI:", suggestions);
+
+            const container = document.getElementById('ai-recommendations-container');
+            if (!container) return;
+
+            // Clear container with fade out
+            container.style.opacity = '0.5';
+            container.style.transition = 'opacity 0.3s ease';
+
+            setTimeout(() => {
+                container.style.opacity = '1';
+
+                if (!suggestions || !suggestions.suggestions || suggestions.suggestions.length === 0) {
+                    container.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: #10B981;">
+                    <div style="width: 80px; height: 80px; background: rgba(16, 185, 129, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                        <i class="fas fa-check-circle" style="color: #10B981; font-size: 2em;"></i>
+                    </div>
+                    <h4 style="color: white; margin-bottom: 10px;">Optimal Health Detected</h4>
+                    <p style="color: #a1a1aa; margin-bottom: 15px;">Your biometrics are within healthy ranges.</p>
+                    <div style="background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 8px; margin-top: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-lightbulb" style="color: #10B981;"></i>
+                            <div>
+                                <div style="font-weight: 500;">Maintain Current Routine</div>
+                                <div style="font-size: 0.9em; color: #a1a1aa;">Continue your healthy habits</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+                    return;
+                }
+
+                let html = '';
+
+                suggestions.suggestions.forEach((suggestion, index) => {
+                    const urgency = suggestion.urgency || 'low';
+                    const urgencyText = urgency.toUpperCase();
+
+                    // Icon based on type
+                    let icon = 'fa-lightbulb';
+                    if (suggestion.type === 'stress_management') icon = 'fa-heart';
+                    if (suggestion.type === 'breathing') icon = 'fa-lungs';
+                    if (suggestion.type === 'hydration') icon = 'fa-glass-water';
+                    if (suggestion.type === 'activity') icon = 'fa-running';
+                    if (suggestion.type === 'immediate_action') icon = 'fa-exclamation-triangle';
+
+                    // Delay for staggered animation
+                    const delay = index * 100;
+
+                    html += `
+                <div class="ai-recommendation-card ${urgency}-urgency" style="animation-delay: ${delay}ms;">
+                    <div class="recommendation-urgency ${urgency}">${urgencyText}</div>
+                    <div style="display: flex; align-items: flex-start; gap: 15px;">
+                        <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas ${icon}" style="color: var(--primary); font-size: 1.2em;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0 0 8px 0; color: white;">${suggestion.title}</h4>
+                            <p style="color: #a1a1aa; font-size: 0.95em; margin: 0 0 12px 0; line-height: 1.5;">${suggestion.description}</p>
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-clock" style="color: #666; font-size: 0.9em;"></i>
+                                    <span style="font-size: 0.9em; color: #a1a1aa;">${suggestion.duration}</span>
+                                </div>
+                                <div style="padding: 6px 15px; background: rgba(0, 240, 255, 0.1); border-radius: 20px; font-size: 0.9em; color: var(--primary); border: 1px solid rgba(0, 240, 255, 0.3);">
+                                    ${suggestion.action}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+                });
+
+                // Add data info
+                html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-database" style="color: var(--primary);"></i>
+                    <div>
+                        <div style="font-size: 0.9em; color: #a1a1aa;">AI Training Data</div>
+                        <div style="font-weight: 500; color: white;">${suggestions.dataPoints} data points</div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.9em; color: #a1a1aa;">${suggestions.baseline ? '✅ Personalized' : '⚡ Learning'}</div>
+                    <div style="font-size: 0.8em; color: #666;">${suggestions.baseline ? 'Baseline established' : 'Establishing baseline'}</div>
+                </div>
+            </div>
+        `;
+
+                container.innerHTML = html;
+
+                // Add animation to cards
+                setTimeout(() => {
+                    const cards = container.querySelectorAll('.ai-recommendation-card');
+                    cards.forEach(card => {
+                        card.style.transform = 'translateY(0)';
+                        card.style.opacity = '1';
+                    });
+                }, 100);
+
+            }, 300);
+        }
+
+
+        // Update Baseline UI
+        function updateBaselineUI() {
+            if (!realAI || !realAI.baseline) return;
+
+            const bpmEl = document.getElementById('baseline-bpm');
+            const spo2El = document.getElementById('baseline-spo2');
+            const infoEl = document.getElementById('baseline-info');
+
+            if (bpmEl) bpmEl.textContent = `${realAI.baseline.bpm.toFixed(0)} BPM`;
+            if (spo2El) spo2El.textContent = `${realAI.baseline.spo2.toFixed(1)}%`;
+            if (infoEl) {
+                const hoursAgo = Math.floor((Date.now() - realAI.baseline.updated) / (1000 * 60 * 60));
+                infoEl.textContent = `Your personal baseline (updated ${hoursAgo} hour${hoursAgo !== 1 ? 's' : ''} ago)`;
+            }
+        }
+
+        // Update Pattern Insights
+        function updatePatternInsights() {
+            if (!realAI || !realAI.patterns.hourly) return;
+
+            const container = document.getElementById('pattern-insights');
+            if (!container) return;
+
+            // Find high-stress hours
+            const highStressHours = [];
+            for (const [hour, data] of Object.entries(realAI.patterns.hourly)) {
+                if (data.stressLevel >= 2) {
+                    highStressHours.push(parseInt(hour));
+                }
+            }
+
+            if (highStressHours.length > 0) {
+                const hourText = highStressHours.map(h => `${h}:00`).join(', ');
+                container.innerHTML = `
+            <div>
+                <div style="color: var(--primary); margin-bottom: 5px;">
+                    <i class="fas fa-chart-line"></i> Pattern Detected
+                </div>
+                <p style="font-size: 0.9em; color: #a1a1aa; margin: 0;">
+                    Higher stress typically occurs at ${hourText}
+                </p>
+            </div>
+        `;
+            }
+        }
+
+        // Update Health Trends
+        function updateHealthTrends() {
+            if (!realAI) return;
+
+            const trends = realAI.getHealthTrends(7);
+            const container = document.getElementById('health-trends');
+
+            if (!trends || trends.length < 3) return;
+
+            // Calculate improvement
+            const first = trends[0];
+            const last = trends[trends.length - 1];
+            const bpmChange = ((first.bpm - last.bpm) / first.bpm) * 100;
+            const spo2Change = last.spo2 - first.spo2;
+
+            let trendText = '';
+            if (bpmChange > 5) {
+                trendText = `Heart rate improved by ${bpmChange.toFixed(1)}%`;
+            } else if (spo2Change > 0.5) {
+                trendText = `Oxygen levels increased by ${spo2Change.toFixed(1)}%`;
+            } else {
+                trendText = 'Stable health metrics maintained';
+            }
+
+            if (container) {
+                container.innerHTML = `
+            <div>
+                <div style="color: #10B981; margin-bottom: 5px;">
+                    <i class="fas fa-trend-up"></i> 7-Day Trend
+                </div>
+                <p style="font-size: 0.9em; color: #a1a1aa; margin: 0;">
+                    ${trendText}
+                </p>
+            </div>
+        `;
+            }
+        }
+
+        // Update AI Status
+        function updateAIStatus() {
+            if (!realAI) return;
+
+            const status = realAI.getStatus();
+            const statusEl = document.getElementById('ai-system-status');
+            const dataPointsEl = document.getElementById('ai-data-points');
+            const learningDot = document.getElementById('ai-learning-dot');
+            const brainStatus = document.getElementById('ai-brain-status');
+
+            if (statusEl) {
+                if (status.isTrained) {
+                    statusEl.innerHTML = `<span style="color: #10B981;">✓ Neural Network Trained</span>`;
+                } else if (status.dataPoints >= 10) {
+                    statusEl.innerHTML = `<span style="color: #F59E0B;">Training with ${status.dataPoints} data points</span>`;
+                } else {
+                    statusEl.innerHTML = `<span style="color: #666;">Collecting data...</span>`;
+                }
+            }
+
+            if (dataPointsEl) {
+                dataPointsEl.textContent = `${status.dataPoints} data points collected`;
+            }
+
+            if (learningDot) {
+                learningDot.style.display = status.isTrained ? 'block' : 'none';
+                if (status.isTrained) {
+                    learningDot.style.animation = 'pulse-green 2s infinite';
+                }
+            }
+
+            if (brainStatus && status.isTrained) {
+                brainStatus.style.animation = 'learningPulse 3s infinite';
+            }
+        }
+
+        // Reset AI Learning
+        function resetAILearning() {
+            if (confirm("Are you sure you want to reset AI learning? All learned patterns will be deleted.")) {
+                if (realAI) {
+                    realAI.resetLearning();
+                    updateAIStatus();
+                    updateAISuggestionsUI({ suggestions: [], dataPoints: 0 });
+                    alert("AI learning has been reset. The system will start learning from scratch.");
+                }
+            }
+        }
+
+        // Export AI Data
+        function exportAIData() {
+            if (!realAI) return;
+
+            const data = {
+                userHistory: realAI.userHistory,
+                baseline: realAI.baseline,
+                patterns: realAI.patterns,
+                exportDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nurotwin_ai_data_${new Date().getTime()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            alert("AI data exported successfully!");
+        }
+
+        // Initialize AI when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            // Load AI system when AI page is opened
+            document.getElementById('nav-ai')?.addEventListener('click', function () {
+                setTimeout(initRealAI, 300);
+            });
+
+            // Initialize if already on AI page
+            if (document.getElementById('page-ai').classList.contains('active')) {
+                setTimeout(initRealAI, 1000);
+            }
+        });
+
+        // Update WebSocket handler to use Real AI
+        // Replace your existing ws.onmessage handler with this:
+        // ============================================
+        // UPDATED WEBSOCKET HANDLER WITH REAL AI
+        // ============================================
+
+        ws.onmessage = function (event) {
+            try {
+                const data = JSON.parse(event.data);
+
+                console.log("WebSocket Data Received:", data); // Debug
+
+                // UPDATE STATE
+                state.bpm = data.bpm || 0;
+                state.spo2 = data.spo2 || 0;
+                state.temp = data.temp || 0;
+
+                // Update Hardware Status
+                const hwDot = document.getElementById('hw-dot');
+                const hwText = document.getElementById('hw-text');
+                if (hwDot) {
+                    hwDot.style.background = '#10B981';
+                    hwText.textContent = 'LIVE DATA';
+                    hwText.style.color = '#10B981';
+                }
+
+                // Update Dashboard Text
+                document.getElementById('dash-bpm').innerText = state.bpm;
+                document.getElementById('dash-spo2').innerText = state.spo2;
+                document.getElementById('dash-temp').innerText = state.temp;
+
+                // Calculate Health Score
+                let score = 100;
+                if (data.stress === "Stressed") score = 60;
+                if (data.stress === "Critical") score = 30;
+                if (state.bpm > 115) score = 40;
+                if (state.spo2 < 94) score -= 20;
+                if (state.temp > 37.5) score -= 10;
+
+                state.healthScore = Math.max(0, Math.min(100, score));
+                document.getElementById('val-health').innerText = state.healthScore + "%";
+
+                // Update Robot Animation
+                if (typeof updateAnimationBasedOnHealth === "function") {
+                    updateAnimationBasedOnHealth(state.healthScore);
+                }
+
+                // Update Charts
+                if (typeof updateCharts === "function") {
+                    updateCharts(state.bpm, state.spo2, state.temp);
+                }
+
+                // ============ CRITICAL: TRIGGER REAL AI ============
+                if (typeof triggerRealAI === "function") {
+                    triggerRealAI(state.bpm, state.spo2, state.temp, state.healthScore);
+                } else {
+                    console.log("Real AI function not found, initializing...");
+                    initRealAI();
+                }
+
+                // Update Voice Assistant
+                if (voiceAssistant) {
+                    voiceAssistant.process(state.healthScore);
+                }
+
+            } catch (e) {
+                console.error("WebSocket Error:", e);
+            }
+        };
     </script>
 </body>
 
