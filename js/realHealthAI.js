@@ -10,7 +10,7 @@ class RealHealthAI {
         this.baseline = null;
         this.patterns = {};
         // Hardcoded Gemini API Key
-        this.apiKey = 'AIzaSyDUKzbKcEKmYFrLXsMkCobBAp6sBxxRqCw';
+        this.apiKey = '';
         this.loadFromStorage();
 
         // Defer neural network initialization to prevent UI freeze
@@ -581,7 +581,7 @@ class RealHealthAI {
     // Generate Advanced Diagnosis using Groq (Fast & Free Tier)
     async generateAdvancedDiagnosis(currentData) {
         // Groq API Key
-        const groqApiKey = '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';
+        const groqApiKey = '';
 
         const prompt = `
         Act as an expert medical AI assistant. Analyze the following health data for a user:
